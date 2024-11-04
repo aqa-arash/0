@@ -1,9 +1,8 @@
-#include <iostream> 
+#include <iostream>
 
-int main (){
-
-std::cout<< "fuck this shit";
-int a;
-std::cin>>a;
-return a;
+int main() {
+    std::cout << "fuck this shit";
+    int a;
+    std::cin >> a;
+    return a;
 };
