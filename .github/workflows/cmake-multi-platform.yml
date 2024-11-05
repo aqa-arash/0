@@ -47,6 +47,16 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
+    - name: Install dependencies on Ubuntu
+      if: matrix.os == 'ubuntu-latest'
+      run: sudo apt-get install -y libomp-dev
+
+    - name: Set OpenMP flags
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        echo "CXXFLAGS=-fopenmp" >> $GITHUB_ENV
+        echo "LDFLAGS=-fopenmp" >> $GITHUB_ENV
+
     - name: Set reusable strings
       # Turn repeated input strings (such as the build output directory) into step outputs. These step outputs can be used throughout the workflow file.
       id: strings
