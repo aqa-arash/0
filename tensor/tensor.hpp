@@ -14,12 +14,12 @@ template<Arithmetic ComponentType>
 class Tensor {
 public:
     // Constructs a tensor with rank = 0 and zero-initializes the element.
-    Tensor();
+    Tensor() = default;
 
-    // Constructs a tensor with arbitrary shape and zero-initializes all elements.
-    Tensor(const std::vector<size_t> &shape);
+    // Constructs a tensor with arbitrary shape and zero-initializes all elements. Only use positive values in the shape.
+    explicit Tensor(const std::vector<size_t> &shape);
 
-    // Constructs a tensor with arbitrary shape and fills it with the specified value.
+    // Constructs a tensor with arbitrary shape and fills it with the specified value. Only use positive values in the shape.
     explicit Tensor(const std::vector<size_t> &shape, const ComponentType &fillValue);
 
     // Copy-constructor.
@@ -56,23 +56,43 @@ public:
     ComponentType &
     operator()(const std::vector<size_t> &idx);
 
+    // get stored data
+    const std::vector<ComponentType>& get_data() const;
+
 private:
     // TODO: Probably you need some members here...
-    const std::vector<size_t> _tensor_shape;
+    std::vector<size_t> _tensor_shape;
     std::vector<ComponentType> _data;
 
     // calculates the index in the flattened array from the rank dim vector
-    size_t coord_to_index(std::vector<size_t> coords);
+    [[nodiscard]] size_t coord_to_index(const std::vector<size_t>& coords) const;
 
-    std::vector<size_t> index_to_coord(size_t index);
+    [[nodiscard]] std::vector<size_t> index_to_coord(size_t index) const;
 
+    // only insert non-negative values
+    static size_t calc_size(const std::vector<size_t> &shape) noexcept;
 };
+
 
 // TODO: Implement all methods of the Tensor class template.
 template<Arithmetic ComponentType>
 Tensor<ComponentType>::Tensor(const std::vector<size_t> &shape) :
     _tensor_shape(shape),
-    _data(std::accumulate(shape.begin(), shape.end(), 1, std::multiplies<size_t>()))
+    _data(calc_size(shape))
+{
+}
+
+template<Arithmetic ComponentType>
+Tensor<ComponentType>::Tensor(const std::vector<size_t> &shape, const ComponentType &fillValue) :
+    _tensor_shape(shape),
+    _data(calc_size(shape), fillValue)
+{
+}
+
+template<Arithmetic ComponentType>
+Tensor<ComponentType>::Tensor(const Tensor<ComponentType> &other) :
+    _tensor_shape(other.shape()),
+    _data(std::copy(other.get_data()))
 {
 }
 
@@ -114,4 +134,36 @@ template<Arithmetic ComponentType>
 void writeTensorToFile(const Tensor<ComponentType> &tensor, const std::string &filename) {
     // TODO: Implement this function to write tensors to file.
     //       The format is defined in the instructions.
+}
+
+template<Arithmetic ComponentType>
+size_t Tensor<ComponentType>::coord_to_index(const std::vector<size_t>& coords) const {
+    size_t index = 0;
+    size_t multiplier = 1;
+    for (size_t i = _tensor_shape.size(); i-- > 0;) {
+        index += coords[i] * multiplier;
+        multiplier *= _tensor_shape[i];
+    }
+    return index;
+}
+
+template<Arithmetic ComponentType>
+std::vector<size_t> Tensor<ComponentType>::index_to_coord(size_t index) const {
+    std::vector<size_t> coords(_tensor_shape.size());
+    for (size_t i = _tensor_shape.size(); i-- > 0;) {
+        coords[i] = index % _tensor_shape[i]; index /= _tensor_shape[i];
+    }
+    return coords;
+}
+
+template<Arithmetic ComponentType>
+size_t Tensor<ComponentType>::calc_size(const std::vector<size_t> &shape){
+    if(shape.empty()) {
+        return 1;
+    }
+    size_t tensor_size = 1;
+    for(const size_t i : shape) {
+        tensor_size *= i;
+    }
+    return tensor_size;
 }
