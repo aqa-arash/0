@@ -4,6 +4,7 @@
 #include <memory>
 #include <stdexcept>
 #include <vector>
+#include <numeric>
 
 
 template<class T>
@@ -57,9 +58,34 @@ public:
 
 private:
     // TODO: Probably you need some members here...
+    const std::vector<size_t> _tensor_shape;
+    std::vector<ComponentType> _data;
+
+    // calculates the index in the flattened array from the rank dim vector
+    size_t coord_to_index(std::vector<size_t> coords);
+
+    std::vector<size_t> index_to_coord(size_t index);
+
 };
 
 // TODO: Implement all methods of the Tensor class template.
+template<Arithmetic ComponentType>
+Tensor<ComponentType>::Tensor(const std::vector<size_t> &shape) :
+    _tensor_shape(shape),
+    _data(std::accumulate(shape.begin(), shape.end(), 1, std::multiplies<size_t>()))
+{
+}
+
+template<Arithmetic ComponentType>
+const ComponentType& Tensor<ComponentType>::operator()(const std::vector<size_t> &idx) const {
+    return _data(coord_to_index(idx));
+}
+
+template<Arithmetic ComponentType>
+ComponentType& Tensor<ComponentType>::operator()(const std::vector<size_t> &idx) {
+    return _data(coord_to_index(idx));
+}
+
 
 
 // Returns true if the shapes and all elements of both tensors are equal.
