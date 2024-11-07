@@ -5,6 +5,7 @@
 #include <stdexcept>
 #include <vector>
 #include <numeric>
+#include <fstream>
 
 
 template<class T>
@@ -37,17 +38,24 @@ public:
     Tensor &
     operator=(Tensor<ComponentType> &&other) noexcept;
 
+    // Friend function for equality comparison
+    template <Arithmetic T>
+    friend bool operator==(const Tensor<T> &a, const Tensor<T> &b);
+
     // Destructor
     ~Tensor() = default;
 
     // Returns the rank of the tensor.
-    [[nodiscard]] size_t rank() const;
+    [[nodiscard]] size_t rank() const {return _tensor_shape.size();}
 
     // Returns the shape of the tensor.
-    [[nodiscard]] std::vector<size_t> shape() const;
+    [[nodiscard]] std::vector<size_t> shape() const {return _tensor_shape;}
 
     // Returns the number of elements of this tensor.
-    [[nodiscard]] size_t numElements() const;
+    [[nodiscard]] size_t numElements() const {return _data.size();}
+
+    // only insert non-negative values
+    static size_t calc_size(const std::vector<size_t> &shape) noexcept;
 
     // Element access function
     const ComponentType &
@@ -56,6 +64,10 @@ public:
     // Element mutation function
     ComponentType &
     operator()(const std::vector<size_t> &idx);
+
+    // Direct Reference used when reading data from a file or writing data to a file
+    ComponentType &Flat_idx(const size_t idx);
+    const ComponentType &Flat_idx (const size_t idx) const;
 
 private:
     // TODO: Probably you need some members here...
@@ -67,28 +79,34 @@ private:
 
     [[nodiscard]] std::vector<size_t> index_to_coord(size_t index) const;
 
-    // only insert non-negative values
-    static size_t calc_size(const std::vector<size_t> &shape) noexcept;
+
 };
 
 
 // TODO: Implement all methods of the Tensor class template.
+
+// constructor with initial values 0
 template<Arithmetic ComponentType>
 Tensor<ComponentType>::Tensor(const std::vector<size_t> &shape) : _tensor_shape(shape),
                                                                   _data(calc_size(shape)) {
 }
 
+// constructor with defined initial values
 template<Arithmetic ComponentType>
 Tensor<ComponentType>::Tensor(const std::vector<size_t> &shape, const ComponentType &fillValue) :
     _tensor_shape(shape),
     _data(calc_size(shape), fillValue) {
 }
 
+// copy contructor
+// TODO: check correct data passed ?
 template<Arithmetic ComponentType>
 Tensor<ComponentType>::Tensor(const Tensor<ComponentType> &other) : _tensor_shape(other._tensor_shape),
                                                                     _data(other._data) {
 }
 
+// move initializer
+// TODO: check correct data pass
 template<Arithmetic ComponentType>
 Tensor<ComponentType>::Tensor(Tensor<ComponentType> &&other) noexcept : _tensor_shape(std::move(other._tensor_shape)),
                                                                         _data(std::move(other._data)) {
@@ -96,6 +114,8 @@ Tensor<ComponentType>::Tensor(Tensor<ComponentType> &&other) noexcept : _tensor_
     other._data.clear();
 }
 
+// Move operator
+// TODO: What if we want to copy? it is more common imo
 template<Arithmetic ComponentType>
 Tensor<ComponentType> &Tensor<ComponentType>::operator=(Tensor<ComponentType> &&other) noexcept {
     if (this != &other) {
@@ -107,6 +127,8 @@ Tensor<ComponentType> &Tensor<ComponentType>::operator=(Tensor<ComponentType> &&
     return *this;
 }
 
+// Accessors
+// Const
 template<Arithmetic ComponentType>
 const ComponentType &Tensor<ComponentType>::operator()(const std::vector<size_t> &idx) const {
     if (idx.size() != _tensor_shape.size()) {
@@ -123,6 +145,7 @@ const ComponentType &Tensor<ComponentType>::operator()(const std::vector<size_t>
     return _data[coord_to_index(idx)];
 }
 
+// Reference
 template<Arithmetic ComponentType>
 ComponentType &Tensor<ComponentType>::operator()(const std::vector<size_t> &idx) {
     if (idx.size() != _tensor_shape.size()) {
@@ -137,6 +160,24 @@ ComponentType &Tensor<ComponentType>::operator()(const std::vector<size_t> &idx)
     }
 
     return _data[coord_to_index(idx)];
+}
+
+// Direct Reference used when reading data from a file or writing data to a file
+template<Arithmetic ComponentType>
+ComponentType &Tensor<ComponentType>::Flat_idx(const size_t idx) {
+    if (idx >= _data.size()) {
+        throw std::out_of_range("Flat Index out of bounds");
+    }
+    return _data[idx];
+}
+
+// Direct Reference used when reading data from a file or writing data to a file
+template<Arithmetic ComponentType>
+const ComponentType &Tensor<ComponentType>::Flat_idx (const size_t idx) const{
+    if (idx >= _data.size()) {
+        throw std::out_of_range("Flat Index out of bounds");
+    }
+    return _data[idx];
 }
 
 // Returns true if the shapes and all elements of both tensors are equal.
@@ -158,25 +199,68 @@ bool operator==(const Tensor<ComponentType> &a, const Tensor<ComponentType> &b) 
 
 // Pretty-prints the tensor to stdout.
 // This is not necessary (and not covered by the tests) but nice to have, also for debugging (and for exercise of course...).
-template<Arithmetic ComponentType>
+/* template<Arithmetic ComponentType>
 std::ostream &
 operator<<(std::ostream &out, const Tensor<ComponentType> &tensor) {
     // TODO (optional): Implement some nice stdout printer for debugging/exercise.
-}
+    
+} */
 
 // Reads a tensor from file.
 template<Arithmetic ComponentType>
 Tensor<ComponentType> readTensorFromFile(const std::string &filename) {
     // TODO: Implement this function to read in tensors from file.
     //       The format is defined in the instructions.
+    std::ifstream file(filename);
+    std::string line="",dataname="";
+    std::vector<size_t> shape={};
+    size_t rank=0;
+    if (file.is_open()){
+        getline(file,line);
+        rank = std::stoi(line);
+        for (size_t i = 0; i < rank; ++i){
+            getline(file,line);
+            shape.push_back(std::stoi(line));
+        }
+        Tensor<ComponentType> data(shape);
+        size_t idx = 0;
+        while (getline(file,line)){
+            data.Flat_idx(idx) = std::stod(line);
+            ++idx;
+        }
+        file.close();
+        return data;
+    }
+    else {
+        std::cout << "Unable to open file";
+        // return empty tensor
+        return Tensor<ComponentType>();
+    }
 }
 
 // Writes a tensor to file.
 template<Arithmetic ComponentType>
 void writeTensorToFile(const Tensor<ComponentType> &tensor, const std::string &filename) {
-    // TODO: Implement this function to write tensors to file.
+    // TODO: Test this function to write tensors to file.
     //       The format is defined in the instructions.
+    std::ofstream tensor_file;
+    tensor_file.open (filename);
+    if (tensor_file.is_open()){
+        tensor_file << tensor.rank()<< std::endl;
+        for (size_t i = 0; i < tensor.rank(); ++i){
+            tensor_file << tensor.shape()[i]<< std::endl;
+        }
+        for (size_t i = 0; i < tensor.numElements(); ++i){
+            tensor_file << tensor.Flat_idx(i)<< std::endl;
+        }
+    tensor_file.close();
+    }
+    else {
+        std::cout << "Unable to open file";
+        }
 }
+
+// for a undefined rank the last index is the fastest
 
 template<Arithmetic ComponentType>
 size_t Tensor<ComponentType>::coord_to_index(const std::vector<size_t> &coords) const {
@@ -199,8 +283,9 @@ std::vector<size_t> Tensor<ComponentType>::index_to_coord(size_t index) const {
     return coords;
 }
 
+// calculates number of elements in tensor
 template<Arithmetic ComponentType>
-size_t Tensor<ComponentType>::calc_size(const std::vector<size_t> &shape) {
+size_t Tensor<ComponentType>::calc_size(const std::vector<size_t> &shape) noexcept {
     if (shape.empty()) {
         return 1;
     }
