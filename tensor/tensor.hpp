@@ -15,7 +15,7 @@ template<Arithmetic ComponentType>
 class Tensor {
 public:
     // Constructs a tensor with rank = 0 and zero-initializes the element.
-    Tensor() = default;
+    Tensor() : Tensor(std::vector<size_t>{}) {} // Delegate to the constructor that takes a vector
 
     // Constructs a tensor with arbitrary shape and zero-initializes all elements. Only use positive values in the shape.
     explicit Tensor(const std::vector<size_t> &shape);
@@ -110,8 +110,8 @@ Tensor<ComponentType>::Tensor(const Tensor<ComponentType> &other) : _tensor_shap
 template<Arithmetic ComponentType>
 Tensor<ComponentType>::Tensor(Tensor<ComponentType> &&other) noexcept : _tensor_shape(std::move(other._tensor_shape)),
                                                                         _data(std::move(other._data)) {
-    other._tensor_shape.clear();
-    other._data.clear();
+    other._data={0};
+    other._tensor_shape={};
 }
 
 // Move operator
@@ -122,6 +122,8 @@ Tensor<ComponentType> &Tensor<ComponentType>::operator=(Tensor<ComponentType> &&
         // Check for self-assignment
         _tensor_shape = std::move(other._tensor_shape);
         _data = std::move(other._data);
+        other._data={0};
+        other._tensor_shape={};
         // no need to clear the other, since it is a temporary
     }
     return *this;
@@ -203,7 +205,7 @@ bool operator==(const Tensor<ComponentType> &a, const Tensor<ComponentType> &b) 
 std::ostream &
 operator<<(std::ostream &out, const Tensor<ComponentType> &tensor) {
     // TODO (optional): Implement some nice stdout printer for debugging/exercise.
-    
+
 } */
 
 // Reads a tensor from file.
