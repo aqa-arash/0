@@ -15,7 +15,7 @@ template<Arithmetic ComponentType>
 class Tensor {
 public:
     // Constructs a tensor with rank = 0 and zero-initializes the element.
-    Tensor() : Tensor(std::vector<size_t>{}) {} // Delegate to the constructor that takes a vector
+    Tensor() :  _tensor_shape({}), _data({0}) {}
 
     // Constructs a tensor with arbitrary shape and zero-initializes all elements. Only use positive values in the shape.
     explicit Tensor(const std::vector<size_t> &shape);
