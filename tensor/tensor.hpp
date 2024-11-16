@@ -14,14 +14,9 @@ concept Arithmetic = std::is_arithmetic_v<T>;
 template<Arithmetic ComponentType>
 class Tensor {
 public:
-    // Constructs a tensor with rank = 0 and zero-initializes the element.
-    Tensor() :  _tensor_shape({}), _data({0}) {}
 
-    // Constructs a tensor with arbitrary shape and zero-initializes all elements. Only use positive values in the shape.
-    explicit Tensor(const std::vector<size_t> &shape);
-
-    // Constructs a tensor with arbitrary shape and fills it with the specified value. Only use positive values in the shape.
-    explicit Tensor(const std::vector<size_t> &shape, const ComponentType &fillValue);
+    // One Constructor to rule them all - a tensor with arbitrary shape and fills it with the specified value. Only use positive values in the shape.
+    Tensor(const std::vector<size_t> &shape={}, const ComponentType &fillValue=0);
 
     // Copy-constructor.
     Tensor(const Tensor<ComponentType> &other);
@@ -39,7 +34,7 @@ public:
     operator=(Tensor<ComponentType> &&other) noexcept;
 
     // Friend function for equality comparison
-    template <Arithmetic T>
+    template<Arithmetic T>
     friend bool operator==(const Tensor<T> &a, const Tensor<T> &b);
 
     // Destructor
@@ -83,15 +78,11 @@ private:
 };
 
 
-// TODO: Implement all methods of the Tensor class template.
+/////////////////////////////////////////////
+///////////////////////////////////////////// Constructors
+/////////////////////////////////////////////
 
-// constructor with initial values 0
-template<Arithmetic ComponentType>
-Tensor<ComponentType>::Tensor(const std::vector<size_t> &shape) : _tensor_shape(shape),
-                                                                  _data(calc_size(shape)) {
-}
-
-// constructor with defined initial values
+// main constructor
 template<Arithmetic ComponentType>
 Tensor<ComponentType>::Tensor(const std::vector<size_t> &shape, const ComponentType &fillValue) :
     _tensor_shape(shape),
@@ -99,7 +90,6 @@ Tensor<ComponentType>::Tensor(const std::vector<size_t> &shape, const ComponentT
 }
 
 // copy contructor
-// TODO: check correct data passed ?
 template<Arithmetic ComponentType>
 Tensor<ComponentType>::Tensor(const Tensor<ComponentType> &other) : _tensor_shape(other._tensor_shape),
                                                                     _data(other._data) {
