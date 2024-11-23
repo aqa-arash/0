@@ -191,12 +191,34 @@ bool operator==(const Tensor<ComponentType> &a, const Tensor<ComponentType> &b) 
 
 // Pretty-prints the tensor to stdout.
 // This is not necessary (and not covered by the tests) but nice to have, also for debugging (and for exercise of course...).
-/* template<Arithmetic ComponentType>
+template<Arithmetic ComponentType>
 std::ostream &
 operator<<(std::ostream &out, const Tensor<ComponentType> &tensor) {
     // TODO (optional): Implement some nice stdout printer for debugging/exercise.
 
-} */
+    // Print the shape
+    out << "Shape: [";
+    for (size_t i = 0; i < tensor.rank(); ++i) {
+        out << tensor.shape()[i];
+        if (i < tensor.rank() - 1) {
+            out << ", ";
+        }
+    }
+    out << "]\n";
+
+    // Print the data in the tensor separated by commas 
+    out << "Data: [";
+    for (size_t i = 0; i < tensor.numElements(); ++i) {
+        out << tensor.Flat_idx(i);
+        if (i < tensor.numElements() - 1) {
+            out << ", ";
+        }
+    }
+    out << "]\n";
+
+    return out;
+
+}
 
 // Reads a tensor from file.
 template<Arithmetic ComponentType>
