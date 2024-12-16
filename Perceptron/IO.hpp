@@ -15,6 +15,8 @@ namespace IO_MNIST {
     Eigen::MatrixXd loadMnistLabels(const std::string &filePath, int numLabels);
 
     void displayImage(const Eigen::MatrixXd &image, int rows, int cols);
+
+    void writeTensorToFile ( const Eigen::MatrixXd & tensor , const std::string &filename ) ;
 };
 
 #endif //IO_HPP

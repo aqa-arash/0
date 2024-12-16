@@ -21,17 +21,24 @@ int main(const int argc, char *argv[]) {
             if (ImageOrLabel == 'I') {
                 std::cout << "Rows: " << rows << ", Columns: " << cols << "\n";
             }
+            else {rows = 1; cols=10;}
 
             if (ImageOrLabel == 'I') {
                 // Load a couple of pictures after the required index
-                if (const auto Matrix = loadMnistImages(inputPath, index + 1, rows, cols); Matrix.nonZeros() == 0)
-                    std::cout << "Load unsuccessful " << "\n";
+                const auto dataset = loadMnistImages(inputPath, index + 1, rows, cols);
+                writeTensorToFile(dataset.row(index).reshaped(rows,cols),outputPath);
+
             } else if (ImageOrLabel == 'L') {
-                if (const auto Matrix = loadMnistLabels(inputPath, index + 1); Matrix.nonZeros() == 0)
-                    std::cout << "Load unsuccessful " << "\n";
+                const auto dataset = loadMnistLabels(inputPath, index + 1);
+                writeTensorToFile(dataset.row(index).reshaped(rows,cols),outputPath);
+
+            }
+            else {
+                std::cout<< "Input Error:  Expected I for image or L for labels"<<std::endl;
+                return 0;
             }
 
-            // write tensor should be called here  (function still not implemented)
+
         } catch (const std::exception &e) {
             std::cerr << "Error: " << e.what() << "\n";
         }
@@ -75,10 +82,15 @@ int main(const int argc, char *argv[]) {
 
             auto labels = loadMnistLabels(labelPath, 10); // Load first 10 labels
 
-            std::cout << "First Label: " << labels(0) << "\n";
+            int index = 0;
+            labels.row(0).maxCoeff(&index);
+            std::cout << "First Label: " << index << "\n";
             std::cout << "First Image:\n";
 
             displayImage(images.row(0).reshaped(rows, cols), rows, cols);
+            writeTensorToFile (images.row(0).reshaped(rows, cols),"image");
+            writeTensorToFile (labels.row(0),"labels");
+
         } catch (const std::exception &e) {
             std::cerr << "Error: " << e.what() << "\n";
         }

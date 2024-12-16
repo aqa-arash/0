@@ -90,4 +90,29 @@ namespace IO_MNIST {
             std::cout << "\n";
         }
     }
+
+    void writeTensorToFile ( const Eigen::MatrixXd & tensor , const std::string &filename ) {
+        std::ofstream file(filename);
+        if (!file.is_open()) {
+            throw std::runtime_error("Cannot open file: " + filename);
+        }
+
+        int rows = tensor.rows();
+        int cols = tensor.cols();
+
+        if (rows==1 && cols ==10 ) {
+        file << "1\n10"<<std::endl;
+        }
+        else {
+        file << "2\n"<<rows<<"\n"<<cols<<std::endl;
+        }
+
+        for (int i = 0 ; i <rows; ++i){
+            for (int j = 0; j < cols ; ++j) {
+                file<<tensor(i,j)<<std::endl;
+            }
+        }
+        file.close();
+    }
+
 }
